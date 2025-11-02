@@ -5,19 +5,49 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Lecture à voix haute</title>
   <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: transparent; /* 👈 rend le fond invisible */
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    }
+
     body {
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      height: 100vh; margin: 0; background: #fff; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
     }
-    .container { display: flex; align-items: center; gap: 0.8rem; }
+
+    .container {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+
     button {
-      font-size: 1rem; padding: 0.5rem 1rem; border: none; border-radius: 999px;
-      background: #000; color: #fff; cursor: pointer; transition: opacity .2s;
+      font-size: 1rem;
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 999px;
+      background: #000;
+      color: #fff;
+      cursor: pointer;
+      transition: opacity 0.2s;
     }
-    button:hover { opacity: .8; }
+    button:hover {
+      opacity: 0.8;
+    }
+
     textarea {
-      width: 220px; height: 90px; font-size: .95rem; padding: .6rem;
-      border-radius: 8px; border: 1px solid #ccc; resize: none;
+      width: 220px;
+      height: 90px;
+      font-size: 0.95rem;
+      padding: 0.6rem;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      resize: none;
+      background: rgba(255, 255, 255, 0.5); /* 👈 semi-transparent pour garder un contraste doux */
     }
   </style>
 </head>
@@ -31,36 +61,37 @@
     const button = document.getElementById('play');
     const textarea = document.getElementById('texte');
 
-    // --- 1) ID unique par embed via l'URL: ?id=maths, ?id=fr, etc.
+    // 🔹 Récupère l'identifiant unique depuis l'URL (?id=xxx)
     const params = new URLSearchParams(location.search);
-    const id = (params.get('id') || 'default').slice(0,50); // petite limite de sécurité
+    const id = (params.get('id') || 'default').slice(0,50);
     const STORAGE_KEY = 'ttsTexteSauvegarde:' + id;
 
-    // Optionnel : texte initial depuis l'URL ?text=Votre%20phrase (utilisé seulement s'il n'y a rien de sauvegardé)
-    const initialFromUrl = params.get('text');
-
-    // --- 2) Charger le texte sauvegardé pour CET id
+    // 🔹 Restaure le texte sauvegardé ou celui passé en paramètre
     const saved = localStorage.getItem(STORAGE_KEY);
+    const textFromUrl = params.get('text');
     if (saved !== null) {
       textarea.value = saved;
-    } else if (initialFromUrl) {
-      textarea.value = decodeURIComponent(initialFromUrl);
+    } else if (textFromUrl) {
+      textarea.value = decodeURIComponent(textFromUrl);
     }
 
-    // --- 3) Sauvegarder automatiquement les modifications pour CET id
+    // 🔹 Sauvegarde automatique
     textarea.addEventListener('input', () => {
       localStorage.setItem(STORAGE_KEY, textarea.value);
     });
 
-    // --- 4) Lecture
+    // 🔹 Lecture
     function speak(text) {
       if (!('speechSynthesis' in window)) {
         alert("La synthèse vocale n'est pas disponible dans ce navigateur.");
         return;
       }
       const u = new SpeechSynthesisUtterance(text);
-      u.lang = "fr-FR"; u.rate = 1; u.pitch = 1;
-      speechSynthesis.cancel(); speechSynthesis.speak(u);
+      u.lang = "fr-FR";
+      u.rate = 1;
+      u.pitch = 1;
+      speechSynthesis.cancel();
+      speechSynthesis.speak(u);
     }
 
     button.addEventListener('click', () => {
