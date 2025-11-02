@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Synthèse vocale — Lecture de phrases</title>
+  <style>
+    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+    body { margin: 2rem; line-height: 1.5; max-width: 900px; }
+    h1 { margin: 0 0 .25rem 0; }
+    .hint { color: #555; margin: 0 0 1rem 0; }
+    .bar { display: flex; flex-wrap: wrap; gap: .75rem 1rem; align-items: center; margin: 1rem 0 1.25rem; }
+    label { display: inline-flex; align-items: center; gap: .5rem; }
+    select, input[type="range"], button { cursor: pointer; }
+    .start { padding: .6rem 1rem; border-radius: 999px; border: 1px solid #ccc; background: #fff; }
+    .phrases { display: grid; gap: .75rem; }
+    .card { display: grid; grid-template-columns: 1fr auto; gap: .75rem; align-items: center; padding: .75rem 1rem; border: 1px solid #e3e3e3; border-radius: 12px; }
+    .controls { display: inline-flex; gap: .5rem; }
+    .btn { padding: .4rem .7rem; border-radius: 999px; border: 1px solid #ccc; background: #fff; }
+    .btn[aria-pressed="true"] { outline: 2px solid #888; }
+    textarea { width: 100%; min-height: 110px; padding: .75rem; border-radius: 10px; border: 1px solid #ddd; }
+    .small { font-size: .9rem; color: #666; }
+  </style>
+</head>
+<body>
+  <h1>Lecture de phrases (Web Speech API)</h1>
+  <p class="hint">Clique sur <strong>Démarrer</strong>, puis sur les boutons <strong>▶</strong> pour lancer la voix. Fonctionne dans un onglet Chrome et aussi via l’embed Classroomscreen.</p>
+
+  <div class="bar">
+    <button id="start" class="start" type="button">Démarrer</button>
+    <label>Voix
+      <select id="voice"></select>
+    </label>
+    <label>Vitesse
+      <input id="rate" type="range" min="0.5" max="2" step="0.1" value="1">
+      <span id="rateVal" class="small">1.0</span>
+    </label>
+    <label>Hauteur
+      <input id="pitch" type="range" min="0" max="2" step="0.1" value="1">
+      <span id="pitchVal" class="small">1.0</span>
+    </label>
+  </div>
+
+  <div class="small" style="margin:.5rem 0 .75rem">✏️ Modifie les phrases (une par ligne) puis clique sur <em>Mettre à jour</em>.</div>
+  <textarea id="source">Bonjour et bienvenue sur notre écran de classe.
+Cliquez sur le bouton pour lancer la lecture à voix haute.
+Vous pouvez ajuster la vitesse et la hauteur de la voix.</textarea>
+  <div style="margin:.5rem 0 1.25rem">
+    <button id="refresh" class="btn" type="button">Mettre à jour les phrases</button>
+  </div>
+
+  <div id="list" class="phrases" aria-live="polite"></div>
+
+  <template id="row">
+    <div class="card">
+      <div class="text"></div>
+      <div class="controls">
+        <button class="btn play" type="button" aria-pressed="false" title="Lire">▶</button>
+        <button class="btn stop" type="button" title="Arrêter">■</button>
+      </div>
+    </div>
+  </template>
+
+  <script>
+    // ---- Etat global ----
+    const el = {
+      start: document.getElementById("start"),
+      voice: document.getElementById("voice"),
+      rate: document.getElementById("rate"),
+      pitch: document.getElementById("pitch"),
+      rateVal: document.getElementById("rateVal"),
+      pitchVal: document.getElementById("pitchVal"),
+      source: document.getElementById("source"),
+      refresh: document.getElementById("refresh"),
+      list: document.getElementById("list"),
+      row: document.getElementById("row")
+    };
+
+    let voices = [];
+    let ttsReady = false;
+
+    // ---- Utilitaires ----
+    const hasTTS = () => ("speechSynthesis" in window && "SpeechSynthesisUtterance" in window);
+
+    function loadVoicesToSelect() {
+      voices = speechSynthesis.getVoices() || [];
+      // Ordonner avec les FR en premier
+      const isFr = v => (v.lang || "").toLowerCase().startsWith("fr");
+      voices.sort((a,b) => {
+        const af = isFr(a), bf = isFr(b);
+        if (af && !bf) return -1;
+        if (!af && bf) return 1;
+        return (a.name||"").localeCompare(b.name||"");
+      });
+
+      el.voice.innerHTML = "";
+      voices.forEach((v, i) => {
+        const opt = document.createElement("option");
+        opt.value = String(i);
+        opt.textContent = `${v.name} — ${v.lang}${v.localService ? " (local)" : ""}`;
+        el.voice.appendChild(opt);
+      });
+
+      // Sélection FR par défaut si possible
+      const idxFR = voices.findIndex(v => v.lang === "fr-FR");
+      const idxFrGeneric = voices.findIndex(isFr);
+      el.voice.value = String(idxFR >= 0 ? idxFR : (idxFrGeneric >= 0 ? idxFrGeneric : 0));
+    }
+
+    function pickVoice() {
+      const i = parseInt(el.voice.value, 10);
+      return voices[i] || null;
+    }
+
+    function speak(text) {
+      return new Promise((resolve, reject) => {
+        if (!hasTTS()) return reject(new Error("Synthèse vocale indisponible"));
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = "fr-FR";
+        const v = pickVoice();
+        if (v) u.voice = v;
+        u.rate = parseFloat(el.rate.value);
+        u.pitch = parseFloat(el.pitch.value);
+        u.volume = 1;
+
+        u.onend = resolve;
+        u.onerror = reject;
+
+        // Important: nettoyer la file avant de parler
+        speechSynthesis.cancel();
+        speechSynthesis.speak(u);
+      });
+    }
+
+    function stopAll() {
+      if (hasTTS()) speechSynthesis.cancel();
+      document.querySelectorAll(".play[aria-pressed='true']")
+        .forEach(btn => btn.setAttribute("aria-pressed", "false"));
+    }
+
+    function buildList(lines) {
+      el.list.innerHTML = "";
+      const tpl = el.row.content.firstElementChild;
+      lines.forEach(line => {
+        const text = line.trim();
+        if (!text) return;
+        const node = tpl.cloneNode(true);
+        node.querySelector(".text").textContent = text;
+        el.list.appendChild(node);
+      });
+    }
+
+    // ---- Initialisation contrôlée par clic ("Démarrer") ----
+    el.start.addEventListener("click", () => {
+      if (!hasTTS()) {
+        alert("La synthèse vocale n'est pas disponible dans ce navigateur.");
+        return;
+      }
+      // Le clic utilisateur débloque la synthèse dans les iframes / mobiles.
+      ttsReady = true;
+
+      // Charger les voix (beaucoup de navigateurs notifient async)
+      loadVoicesToSelect();
+      speechSynthesis.onvoiceschanged = loadVoicesToSelect;
+
+      el.start.disabled = true;
+      el.start.textContent = "Prêt ✅";
+    });
+
+    // ---- Phrases depuis la zone de texte ----
+    function refreshFromTextarea() {
+      const lines = el.source.value.split(/\r?\n/);
+      buildList(lines);
+    }
+    el.refresh.addEventListener("click", refreshFromTextarea);
+    refreshFromTextarea();
+
+    // ---- Paramètres dynamiques ----
+    el.rate.addEventListener("input", () => el.rateVal.textContent = el.rate.value);
+    el.pitch.addEventListener("input", () => el.pitchVal.textContent = el.pitch.value);
+
+    // ---- Gestion lecture / arrêt ----
+    el.list.addEventListener("click", async (e) => {
+      const play = e.target.closest(".play");
+      const stop = e.target.closest(".stop");
+      const card = e.target.closest(".card");
+      if (!card) return;
+
+      if (stop) { stopAll(); return; }
+
+      if (play) {
+        if (!ttsReady) {
+          // En iframe (Classroomscreen), un clic sur "Démarrer" est indispensable
+          alert("Clique d'abord sur le bouton « Démarrer » pour activer la voix.");
+          return;
+        }
+
+        const active = play.getAttribute("aria-pressed") === "true";
+        if (active) { stopAll(); return; }
+
+        stopAll();
+        play.setAttribute("aria-pressed", "true");
+        const text = card.querySelector(".text").textContent;
+        try { await speak(text); } catch(e) { console.error(e); }
+        play.setAttribute("aria-pressed", "false");
+      }
+    });
+
+    // ---- Nettoyage quand on quitte ----
+    addEventListener("beforeunload", stopAll);
+    addEventListener("pagehide", stopAll);
+  </script>
+</body>
+</html>
