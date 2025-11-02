@@ -7,11 +7,20 @@
   <style>
     body {
       display: flex;
+      flex-direction: column;
       justify-content: center;
       align-items: center;
       height: 100vh;
       background: #ffffff;
       margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      text-align: center;
+    }
+    p {
+      font-size: 1.3rem;
+      color: #222;
+      margin-bottom: 2.5rem; /* 🌿 espace entre le texte et le bouton */
+      max-width: 80%;
     }
     button {
       font-size: 1.2rem;
@@ -21,6 +30,7 @@
       background: #0078ff;
       color: #fff;
       cursor: pointer;
+      transition: background 0.2s;
     }
     button:hover {
       background: #005fd1;
@@ -28,11 +38,12 @@
   </style>
 </head>
 <body>
+  <p id="phrase">Bonjour à tous. Écoutons la consigne ensemble.</p>
   <button id="play">▶ Lecture</button>
 
   <script>
     const button = document.getElementById('play');
-    const texte = "Écrire la date sur l'ordinateur.";
+    const texte = document.getElementById('phrase').textContent;
 
     function speak(text) {
       if (!('speechSynthesis' in window)) {
@@ -53,6 +64,3 @@
   </script>
 </body>
 </html>
-
-
-
