@@ -6,44 +6,18 @@
   <title>Lecture à voix haute</title>
   <style>
     body {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      margin: 0;
-      background: #ffffff;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      height: 100vh; margin: 0; background: #fff; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
     }
-
-    .container {
-      display: flex;
-      align-items: center;
-      gap: 0.8rem;
-    }
-
+    .container { display: flex; align-items: center; gap: 0.8rem; }
     button {
-      font-size: 1rem;
-      padding: 0.5rem 1rem;
-      border: none;
-      border-radius: 999px;
-      background: #000;
-      color: #fff;
-      cursor: pointer;
-      transition: opacity 0.2s;
+      font-size: 1rem; padding: 0.5rem 1rem; border: none; border-radius: 999px;
+      background: #000; color: #fff; cursor: pointer; transition: opacity .2s;
     }
-    button:hover {
-      opacity: 0.8;
-    }
-
+    button:hover { opacity: .8; }
     textarea {
-      width: 220px;
-      height: 90px;
-      font-size: 0.95rem;
-      padding: 0.6rem;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      resize: none;
+      width: 220px; height: 90px; font-size: .95rem; padding: .6rem;
+      border-radius: 8px; border: 1px solid #ccc; resize: none;
     }
   </style>
 </head>
@@ -56,31 +30,37 @@
   <script>
     const button = document.getElementById('play');
     const textarea = document.getElementById('texte');
-    const STORAGE_KEY = 'ttsTexteSauvegarde';
 
-    // 🔹 Charger le texte sauvegardé (s’il existe)
-    const savedText = localStorage.getItem(STORAGE_KEY);
-    if (savedText) {
-      textarea.value = savedText;
+    // --- 1) ID unique par embed via l'URL: ?id=maths, ?id=fr, etc.
+    const params = new URLSearchParams(location.search);
+    const id = (params.get('id') || 'default').slice(0,50); // petite limite de sécurité
+    const STORAGE_KEY = 'ttsTexteSauvegarde:' + id;
+
+    // Optionnel : texte initial depuis l'URL ?text=Votre%20phrase (utilisé seulement s'il n'y a rien de sauvegardé)
+    const initialFromUrl = params.get('text');
+
+    // --- 2) Charger le texte sauvegardé pour CET id
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved !== null) {
+      textarea.value = saved;
+    } else if (initialFromUrl) {
+      textarea.value = decodeURIComponent(initialFromUrl);
     }
 
-    // 🔹 Sauvegarder automatiquement quand on tape
+    // --- 3) Sauvegarder automatiquement les modifications pour CET id
     textarea.addEventListener('input', () => {
       localStorage.setItem(STORAGE_KEY, textarea.value);
     });
 
-    // 🔹 Fonction de lecture
+    // --- 4) Lecture
     function speak(text) {
       if (!('speechSynthesis' in window)) {
         alert("La synthèse vocale n'est pas disponible dans ce navigateur.");
         return;
       }
       const u = new SpeechSynthesisUtterance(text);
-      u.lang = "fr-FR";
-      u.rate = 1;
-      u.pitch = 1;
-      speechSynthesis.cancel();
-      speechSynthesis.speak(u);
+      u.lang = "fr-FR"; u.rate = 1; u.pitch = 1;
+      speechSynthesis.cancel(); speechSynthesis.speak(u);
     }
 
     button.addEventListener('click', () => {
@@ -90,6 +70,3 @@
   </script>
 </body>
 </html>
-
-
-
