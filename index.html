@@ -19,7 +19,7 @@
     .container {
       display: flex;
       align-items: center;
-      gap: 0.8rem; /* espace entre le bouton et la zone de texte */
+      gap: 0.8rem;
     }
 
     button {
@@ -27,7 +27,7 @@
       padding: 0.5rem 1rem;
       border: none;
       border-radius: 999px;
-      background: #000;     /* bouton noir */
+      background: #000;
       color: #fff;
       cursor: pointer;
       transition: opacity 0.2s;
@@ -37,7 +37,7 @@
     }
 
     textarea {
-      width: 220px;         /* zone plus étroite */
+      width: 220px;
       height: 90px;
       font-size: 0.95rem;
       padding: 0.6rem;
@@ -56,7 +56,20 @@
   <script>
     const button = document.getElementById('play');
     const textarea = document.getElementById('texte');
+    const STORAGE_KEY = 'ttsTexteSauvegarde';
 
+    // 🔹 Charger le texte sauvegardé (s’il existe)
+    const savedText = localStorage.getItem(STORAGE_KEY);
+    if (savedText) {
+      textarea.value = savedText;
+    }
+
+    // 🔹 Sauvegarder automatiquement quand on tape
+    textarea.addEventListener('input', () => {
+      localStorage.setItem(STORAGE_KEY, textarea.value);
+    });
+
+    // 🔹 Fonction de lecture
     function speak(text) {
       if (!('speechSynthesis' in window)) {
         alert("La synthèse vocale n'est pas disponible dans ce navigateur.");
@@ -77,5 +90,6 @@
   </script>
 </body>
 </html>
+
 
 
