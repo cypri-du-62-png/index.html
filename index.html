@@ -1,57 +1,58 @@
 <!doctype html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Lecture à voix haute</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lecture</title>
   <style>
     body {
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-      display: flex; flex-direction: column; align-items: center;
-      justify-content: center; height: 100vh; text-align: center;
-      background: #f9fafb; color: #222;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: #ffffff;
+      margin: 0;
     }
     button {
-      font-size: 1.25rem;
-      padding: .8rem 1.5rem;
+      font-size: 1.2rem;
+      padding: 0.8rem 1.5rem;
       border: none;
       border-radius: 999px;
       background: #0078ff;
-      color: white;
+      color: #fff;
       cursor: pointer;
-      box-shadow: 0 4px 10px rgba(0,0,0,.1);
-      transition: background .2s;
     }
-    button:hover { background: #005fd1; }
+    button:hover {
+      background: #005fd1;
+    }
   </style>
 </head>
 <body>
-  <h1>Lecture à voix haute</h1>
-  <p id="phrase">écrire la date sur l'ordinateur</p>
-  <button id="play">▶ Lire la phrase</button>
+  <button id="play">▶ Lecture</button>
 
   <script>
     const button = document.getElementById('play');
-    const phrase = document.getElementById('phrase').textContent;
-
-    if (!('speechSynthesis' in window)) {
-      alert("La synthèse vocale n'est pas disponible dans ce navigateur.");
-    }
+    const texte = "Écrire la date sur l'ordinateur.";
 
     function speak(text) {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = "fr-FR";
-      utterance.rate = 1;
-      utterance.pitch = 1;
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(utterance);
+      if (!('speechSynthesis' in window)) {
+        alert("La synthèse vocale n'est pas disponible dans ce navigateur.");
+        return;
+      }
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = "fr-FR";
+      u.rate = 1;
+      u.pitch = 1;
+      speechSynthesis.cancel();
+      speechSynthesis.speak(u);
     }
 
     button.addEventListener('click', () => {
-      speak(phrase);
+      speak(texte);
     });
   </script>
 </body>
 </html>
+
 
 
