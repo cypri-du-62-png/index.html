@@ -3,47 +3,59 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Lecture</title>
+  <title>Lecture à voix haute</title>
   <style>
     body {
       display: flex;
       flex-direction: column;
-      justify-content: center;
       align-items: center;
+      justify-content: center;
       height: 100vh;
-      background: #ffffff;
       margin: 0;
+      background: #ffffff;
       font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-      text-align: center;
     }
-    p {
-      font-size: 1.3rem;
-      color: #222;
-      margin-bottom: 10rem; /* 🌿 espace entre le texte et le bouton */
-      max-width: 80%;
+
+    .container {
+      display: flex;
+      align-items: center;
+      gap: 1rem; /* espace entre le bouton et le texte */
     }
+
     button {
-      font-size: 1.2rem;
-      padding: 0.8rem 1.5rem;
+      font-size: 1.1rem;
+      padding: 0.7rem 1.3rem;
       border: none;
       border-radius: 999px;
       background: #0078ff;
-      color: #fff;
+      color: white;
       cursor: pointer;
       transition: background 0.2s;
     }
     button:hover {
       background: #005fd1;
     }
+
+    textarea {
+      width: 320px;
+      height: 120px;
+      font-size: 1rem;
+      padding: 0.8rem;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      resize: none;
+    }
   </style>
 </head>
 <body>
-  <p id="phrase">Écrire la date sur l'ordinateur</p>
-  <button id="play">▶ Lecture</button>
+  <div class="container">
+    <button id="play">▶ Lecture</button>
+    <textarea id="texte">Bonjour à tous. Écoutons la consigne ensemble.</textarea>
+  </div>
 
   <script>
     const button = document.getElementById('play');
-    const texte = document.getElementById('phrase').textContent;
+    const textarea = document.getElementById('texte');
 
     function speak(text) {
       if (!('speechSynthesis' in window)) {
@@ -59,7 +71,8 @@
     }
 
     button.addEventListener('click', () => {
-      speak(texte);
+      const text = textarea.value.trim();
+      if (text) speak(text);
     });
   </script>
 </body>
