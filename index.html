@@ -6,68 +6,27 @@
   <title>Lecture à voix haute</title>
   <style>
     html, body {
-      height: 100%;
-      margin: 0;
-      background: transparent;
+      height: 100%; margin: 0; background: transparent;
       font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 0.4rem;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .4rem;
     }
-
-    .container {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
+    .container { display: flex; align-items: center; gap: .5rem; }
     button {
-      font-size: 0.9rem;
-      padding: 0.35rem 0.8rem;
-      border: none;
-      border-radius: 999px;
-      background: #000;
-      color: #fff;
-      cursor: pointer;
-      transition: opacity 0.2s;
+      font-size: .9rem; padding: .35rem .8rem; border: none; border-radius: 999px;
+      background: #000; color: #fff; cursor: pointer; transition: opacity .2s;
     }
-    button:hover { opacity: 0.8; }
-
+    button:hover { opacity: .8; }
     .tools {
-      display: flex;
-      justify-content: flex-end;
-      gap: 0.3rem;
-      width: 220px;
-      flex-wrap: wrap;
+      display: flex; justify-content: flex-end; gap: .3rem; width: 220px; flex-wrap: wrap;
     }
-
     .tools button {
-      background: #e5e5e5;
-      color: #111;
-      border-radius: 8px;
-      padding: 0.25rem 0.6rem;
-      font-size: 0.8rem;
-      border: 1px solid #ccc;
+      background: #e5e5e5; color: #111; border-radius: 8px; padding: .25rem .6rem; font-size: .8rem; border: 1px solid #ccc;
     }
-
     textarea {
-      width: 220px;
-      height: 70px;
-      font-size: 0.9rem;
-      padding: 0.5rem;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      resize: none;
-      background: rgba(255,255,255,0.5);
+      width: 220px; height: 70px; font-size: .9rem; padding: .5rem;
+      border-radius: 8px; border: 1px solid #ccc; resize: none; background: rgba(255,255,255,.5);
     }
-
-    .msg {
-      font-size: 0.8rem;
-      color: #333;
-      min-height: 1em;
-    }
+    .msg { font-size: .8rem; color: #333; min-height: 1em; }
   </style>
 </head>
 <body>
@@ -93,7 +52,7 @@
 
     // --- ID unique par embed ---
     const params = new URLSearchParams(location.search);
-    const id = (params.get('id') || 'default').slice(0,50);
+    const id = (params.get('id') || '1').slice(0,50); // "1" par défaut si tu veux
     const STORAGE_KEY = 'ttsTexteSauvegarde:' + id;
 
     // --- Charger texte : priorité à l'URL, sinon storage, sinon valeur par défaut ---
@@ -106,7 +65,7 @@
       textarea.value = saved;
     }
 
-    // --- Sauvegarde locale automatique ---
+    // --- Sauvegarde locale automatique (même PC) ---
     textarea.addEventListener('input', () => {
       localStorage.setItem(STORAGE_KEY, textarea.value);
     });
@@ -121,20 +80,28 @@
       u.lang = "fr-FR"; u.rate = 1; u.pitch = 1;
       speechSynthesis.cancel(); speechSynthesis.speak(u);
     }
-
     btnPlay.addEventListener('click', () => {
       const text = textarea.value.trim();
       if (text) speak(text);
     });
 
-    // --- Fonction pour générer une URL mise à jour ---
+    // --- Générer URL encodée correctement ---
     function generateUrl() {
-      const base = location.origin + location.pathname;
-      const text = encodeURIComponent(textarea.value || '');
+      const base = location.origin + location.pathname; // ex: https://tonpseudo.github.io/index.html
+      const text = encodeURIComponent(textarea.value || ''); // encode espaces, apostrophes, etc.
       return `${base}?id=${encodeURIComponent(id)}&text=${text}`;
     }
 
-    // --- Copier un lien partageable avec le texte encodé ---
+    // --- Actualiser : met à jour l’URL dans la barre d’adresse (sans rechargement) + sauvegarde ---
+    btnRefresh.addEventListener('click', () => {
+      const newUrl = generateUrl();
+      history.replaceState(null, '', newUrl); // met à jour l’URL visible
+      localStorage.setItem(STORAGE_KEY, textarea.value);
+      msg.textContent = "Texte et URL actualisés 🔄";
+      setTimeout(() => (msg.textContent = ''), 2000);
+    });
+
+    // --- Copier le lien (avec texte encodé à jour) ---
     btnCopy.addEventListener('click', async () => {
       const newUrl = generateUrl();
       try {
@@ -146,16 +113,7 @@
       setTimeout(() => (msg.textContent = ''), 3000);
     });
 
-    // --- Actualiser : met à jour l’URL dans la barre d’adresse et sauvegarde ---
-    btnRefresh.addEventListener('click', () => {
-      const newUrl = generateUrl();
-      history.replaceState(null, '', newUrl); // met à jour l’URL sans recharger
-      localStorage.setItem(STORAGE_KEY, textarea.value);
-      msg.textContent = "Texte et URL actualisés 🔄";
-      setTimeout(() => (msg.textContent = ''), 2000);
-    });
-
-    // --- Réinitialiser le texte ---
+    // --- Réinitialiser : vide texte, storage, et nettoie l’URL ---
     btnClear.addEventListener('click', () => {
       textarea.value = '';
       localStorage.removeItem(STORAGE_KEY);
