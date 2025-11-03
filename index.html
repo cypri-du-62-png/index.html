@@ -33,15 +33,14 @@
       cursor: pointer;
       transition: opacity 0.2s;
     }
-    button:hover {
-      opacity: 0.8;
-    }
+    button:hover { opacity: 0.8; }
 
     .tools {
       display: flex;
       justify-content: flex-end;
       gap: 0.3rem;
-      width: 220px; /* même largeur que la zone */
+      width: 220px;
+      flex-wrap: wrap;
     }
 
     .tools button {
@@ -74,4 +73,97 @@
 <body>
   <div class="container">
     <button id="play">▶</button>
-    <textarea i
+    <textarea id="texte">Bonjour à tous. Écoutons la consigne ensemble.</textarea>
+  </div>
+
+  <div class="tools">
+    <button id="refresh" title="Mettre à jour le texte et l’URL">🔄 Actualiser</button>
+    <button id="copy" title="Copier un lien partageable avec ce texte">🔗 Copier</button>
+    <button id="clear" title="Effacer ce texte pour ce widget">🗑 Réinitialiser</button>
+  </div>
+  <div id="msg" class="msg"></div>
+
+  <script>
+    const btnPlay = document.getElementById('play');
+    const btnCopy = document.getElementById('copy');
+    const btnClear = document.getElementById('clear');
+    const btnRefresh = document.getElementById('refresh');
+    const textarea = document.getElementById('texte');
+    const msg = document.getElementById('msg');
+
+    // --- ID unique par embed ---
+    const params = new URLSearchParams(location.search);
+    const id = (params.get('id') || 'default').slice(0,50);
+    const STORAGE_KEY = 'ttsTexteSauvegarde:' + id;
+
+    // --- Charger texte : priorité à l'URL, sinon storage, sinon valeur par défaut ---
+    const urlText = params.get('text');
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (urlText) {
+      textarea.value = decodeURIComponent(urlText);
+      localStorage.setItem(STORAGE_KEY, textarea.value);
+    } else if (saved !== null) {
+      textarea.value = saved;
+    }
+
+    // --- Sauvegarde locale automatique ---
+    textarea.addEventListener('input', () => {
+      localStorage.setItem(STORAGE_KEY, textarea.value);
+    });
+
+    // --- Lecture ---
+    function speak(text) {
+      if (!('speechSynthesis' in window)) {
+        alert("La synthèse vocale n'est pas disponible dans ce navigateur.");
+        return;
+      }
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = "fr-FR"; u.rate = 1; u.pitch = 1;
+      speechSynthesis.cancel(); speechSynthesis.speak(u);
+    }
+
+    btnPlay.addEventListener('click', () => {
+      const text = textarea.value.trim();
+      if (text) speak(text);
+    });
+
+    // --- Fonction pour générer une URL mise à jour ---
+    function generateUrl() {
+      const base = location.origin + location.pathname;
+      const text = encodeURIComponent(textarea.value || '');
+      return `${base}?id=${encodeURIComponent(id)}&text=${text}`;
+    }
+
+    // --- Copier un lien partageable avec le texte encodé ---
+    btnCopy.addEventListener('click', async () => {
+      const newUrl = generateUrl();
+      try {
+        await navigator.clipboard.writeText(newUrl);
+        msg.textContent = "Lien copié ✅";
+      } catch {
+        msg.textContent = "Copiez ce lien : " + newUrl;
+      }
+      setTimeout(() => (msg.textContent = ''), 3000);
+    });
+
+    // --- Actualiser : met à jour l’URL dans la barre d’adresse et sauvegarde ---
+    btnRefresh.addEventListener('click', () => {
+      const newUrl = generateUrl();
+      history.replaceState(null, '', newUrl); // met à jour l’URL sans recharger
+      localStorage.setItem(STORAGE_KEY, textarea.value);
+      msg.textContent = "Texte et URL actualisés 🔄";
+      setTimeout(() => (msg.textContent = ''), 2000);
+    });
+
+    // --- Réinitialiser le texte ---
+    btnClear.addEventListener('click', () => {
+      textarea.value = '';
+      localStorage.removeItem(STORAGE_KEY);
+      const base = location.origin + location.pathname + '?id=' + encodeURIComponent(id);
+      history.replaceState(null, '', base);
+      msg.textContent = "Texte réinitialisé";
+      setTimeout(() => (msg.textContent = ''), 2000);
+    });
+  </script>
+</body>
+</html>
