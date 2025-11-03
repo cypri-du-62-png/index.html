@@ -14,16 +14,16 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 0.4rem;
     }
 
-    .container {
+    /* --- Ligne principale --- */
+    .row {
       display: flex;
       align-items: center;
       gap: 0.5rem;
     }
 
-    /* --- Bouton principal Lecture --- */
+    /* --- Bouton Lecture --- */
     #play {
       font-size: 1rem;
       padding: 0.35rem 0.8rem;
@@ -48,12 +48,12 @@
       background: rgba(255,255,255,0.5);
     }
 
-    /* --- Barre d’outils --- */
+    /* --- Bloc des 3 icônes à droite --- */
     .tools {
       display: flex;
-      justify-content: flex-end;
-      gap: 0.4rem;
-      width: 220px;
+      flex-direction: column;
+      gap: 0.3rem;
+      align-items: center;
     }
 
     .tools button {
@@ -75,24 +75,24 @@
       background: #d5d5d5;
     }
 
-    /* --- Message temporaire --- */
     .msg {
       font-size: 0.8rem;
       color: #333;
+      margin-top: 0.4rem;
       min-height: 1em;
+      text-align: center;
     }
   </style>
 </head>
 <body>
-  <div class="container">
+  <div class="row">
     <button id="play" title="Lire le texte">▶</button>
     <textarea id="texte">Bonjour à tous. Écoutons la consigne ensemble.</textarea>
-  </div>
-
-  <div class="tools">
-    <button id="refresh" title="Actualiser le texte et l’URL">🔄</button>
-    <button id="copy" title="Copier le lien du texte">🔗</button>
-    <button id="clear" title="Réinitialiser le texte">🗑</button>
+    <div class="tools">
+      <button id="refresh" title="Actualiser le texte et l’URL">🔄</button>
+      <button id="copy" title="Copier le lien du texte">🔗</button>
+      <button id="clear" title="Réinitialiser le texte">🗑</button>
+    </div>
   </div>
 
   <div id="msg" class="msg"></div>
@@ -110,7 +110,7 @@
     const id = (params.get('id') || '1').slice(0,50);
     const STORAGE_KEY = 'ttsTexteSauvegarde:' + id;
 
-    // --- Charger texte : priorité à l'URL, sinon storage, sinon valeur par défaut ---
+    // --- Charger texte : URL > stockage local > valeur par défaut ---
     const urlText = params.get('text');
     const saved = localStorage.getItem(STORAGE_KEY);
     if (urlText) {
@@ -120,23 +120,20 @@
       textarea.value = saved;
     }
 
-    // --- Sauvegarde locale automatique ---
+    // --- Sauvegarde automatique ---
     textarea.addEventListener('input', () => {
       localStorage.setItem(STORAGE_KEY, textarea.value);
     });
 
-    // --- Lecture du texte ---
+    // --- Lecture ---
     function speak(text) {
       if (!('speechSynthesis' in window)) {
         alert("La synthèse vocale n'est pas disponible dans ce navigateur.");
         return;
       }
       const u = new SpeechSynthesisUtterance(text);
-      u.lang = "fr-FR";
-      u.rate = 1;
-      u.pitch = 1;
-      speechSynthesis.cancel();
-      speechSynthesis.speak(u);
+      u.lang = "fr-FR"; u.rate = 1; u.pitch = 1;
+      speechSynthesis.cancel(); speechSynthesis.speak(u);
     }
 
     btnPlay.addEventListener('click', () => {
@@ -144,14 +141,14 @@
       if (text) speak(text);
     });
 
-    // --- Générer une URL à jour ---
+    // --- Génération d’URL encodée ---
     function generateUrl() {
       const base = location.origin + location.pathname;
       const text = encodeURIComponent(textarea.value || '');
       return `${base}?id=${encodeURIComponent(id)}&text=${text}`;
     }
 
-    // --- Actualiser : met à jour l’URL dans la barre d’adresse ---
+    // --- Actualiser (met à jour l’URL et le stockage) ---
     btnRefresh.addEventListener('click', () => {
       const newUrl = generateUrl();
       history.replaceState(null, '', newUrl);
@@ -160,7 +157,7 @@
       setTimeout(() => (msg.textContent = ''), 2000);
     });
 
-    // --- Copier le lien ---
+    // --- Copier ---
     btnCopy.addEventListener('click', async () => {
       const newUrl = generateUrl();
       try {
