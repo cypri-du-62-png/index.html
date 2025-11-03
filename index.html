@@ -6,40 +6,95 @@
   <title>Lecture à voix haute</title>
   <style>
     html, body {
-      height: 100%; margin: 0; background: transparent;
+      height: 100%;
+      margin: 0;
+      background: transparent;
       font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .4rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
     }
-    .container { display: flex; align-items: center; gap: .5rem; }
-    button {
-      font-size: .9rem; padding: .35rem .8rem; border: none; border-radius: 999px;
-      background: #000; color: #fff; cursor: pointer; transition: opacity .2s;
+
+    .container {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
     }
-    button:hover { opacity: .8; }
-    .tools {
-      display: flex; justify-content: flex-end; gap: .3rem; width: 220px; flex-wrap: wrap;
+
+    /* --- Bouton principal Lecture --- */
+    #play {
+      font-size: 1rem;
+      padding: 0.35rem 0.8rem;
+      border: none;
+      border-radius: 999px;
+      background: #000;
+      color: #fff;
+      cursor: pointer;
+      transition: opacity 0.2s;
     }
-    .tools button {
-      background: #e5e5e5; color: #111; border-radius: 8px; padding: .25rem .6rem; font-size: .8rem; border: 1px solid #ccc;
-    }
+    #play:hover { opacity: 0.8; }
+
+    /* --- Zone de texte --- */
     textarea {
-      width: 220px; height: 70px; font-size: .9rem; padding: .5rem;
-      border-radius: 8px; border: 1px solid #ccc; resize: none; background: rgba(255,255,255,.5);
+      width: 220px;
+      height: 70px;
+      font-size: 0.9rem;
+      padding: 0.5rem;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      resize: none;
+      background: rgba(255,255,255,0.5);
     }
-    .msg { font-size: .8rem; color: #333; min-height: 1em; }
+
+    /* --- Barre d’outils --- */
+    .tools {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.4rem;
+      width: 220px;
+    }
+
+    .tools button {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: 1px solid #ccc;
+      background: #e5e5e5;
+      color: #111;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .tools button:hover {
+      background: #d5d5d5;
+    }
+
+    /* --- Message temporaire --- */
+    .msg {
+      font-size: 0.8rem;
+      color: #333;
+      min-height: 1em;
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <button id="play">▶</button>
+    <button id="play" title="Lire le texte">▶</button>
     <textarea id="texte">Bonjour à tous. Écoutons la consigne ensemble.</textarea>
   </div>
 
   <div class="tools">
-    <button id="refresh" title="Mettre à jour le texte et l’URL">🔄 Actualiser</button>
-    <button id="copy" title="Copier un lien partageable avec ce texte">🔗 Copier</button>
-    <button id="clear" title="Effacer ce texte pour ce widget">🗑 Réinitialiser</button>
+    <button id="refresh" title="Actualiser le texte et l’URL">🔄</button>
+    <button id="copy" title="Copier le lien du texte">🔗</button>
+    <button id="clear" title="Réinitialiser le texte">🗑</button>
   </div>
+
   <div id="msg" class="msg"></div>
 
   <script>
@@ -52,7 +107,7 @@
 
     // --- ID unique par embed ---
     const params = new URLSearchParams(location.search);
-    const id = (params.get('id') || '1').slice(0,50); // "1" par défaut si tu veux
+    const id = (params.get('id') || '1').slice(0,50);
     const STORAGE_KEY = 'ttsTexteSauvegarde:' + id;
 
     // --- Charger texte : priorité à l'URL, sinon storage, sinon valeur par défaut ---
@@ -65,61 +120,65 @@
       textarea.value = saved;
     }
 
-    // --- Sauvegarde locale automatique (même PC) ---
+    // --- Sauvegarde locale automatique ---
     textarea.addEventListener('input', () => {
       localStorage.setItem(STORAGE_KEY, textarea.value);
     });
 
-    // --- Lecture ---
+    // --- Lecture du texte ---
     function speak(text) {
       if (!('speechSynthesis' in window)) {
         alert("La synthèse vocale n'est pas disponible dans ce navigateur.");
         return;
       }
       const u = new SpeechSynthesisUtterance(text);
-      u.lang = "fr-FR"; u.rate = 1; u.pitch = 1;
-      speechSynthesis.cancel(); speechSynthesis.speak(u);
+      u.lang = "fr-FR";
+      u.rate = 1;
+      u.pitch = 1;
+      speechSynthesis.cancel();
+      speechSynthesis.speak(u);
     }
+
     btnPlay.addEventListener('click', () => {
       const text = textarea.value.trim();
       if (text) speak(text);
     });
 
-    // --- Générer URL encodée correctement ---
+    // --- Générer une URL à jour ---
     function generateUrl() {
-      const base = location.origin + location.pathname; // ex: https://tonpseudo.github.io/index.html
-      const text = encodeURIComponent(textarea.value || ''); // encode espaces, apostrophes, etc.
+      const base = location.origin + location.pathname;
+      const text = encodeURIComponent(textarea.value || '');
       return `${base}?id=${encodeURIComponent(id)}&text=${text}`;
     }
 
-    // --- Actualiser : met à jour l’URL dans la barre d’adresse (sans rechargement) + sauvegarde ---
+    // --- Actualiser : met à jour l’URL dans la barre d’adresse ---
     btnRefresh.addEventListener('click', () => {
       const newUrl = generateUrl();
-      history.replaceState(null, '', newUrl); // met à jour l’URL visible
+      history.replaceState(null, '', newUrl);
       localStorage.setItem(STORAGE_KEY, textarea.value);
-      msg.textContent = "Texte et URL actualisés 🔄";
+      msg.textContent = "🔄 URL mise à jour";
       setTimeout(() => (msg.textContent = ''), 2000);
     });
 
-    // --- Copier le lien (avec texte encodé à jour) ---
+    // --- Copier le lien ---
     btnCopy.addEventListener('click', async () => {
       const newUrl = generateUrl();
       try {
         await navigator.clipboard.writeText(newUrl);
-        msg.textContent = "Lien copié ✅";
+        msg.textContent = "🔗 Lien copié";
       } catch {
         msg.textContent = "Copiez ce lien : " + newUrl;
       }
-      setTimeout(() => (msg.textContent = ''), 3000);
+      setTimeout(() => (msg.textContent = ''), 2500);
     });
 
-    // --- Réinitialiser : vide texte, storage, et nettoie l’URL ---
+    // --- Réinitialiser ---
     btnClear.addEventListener('click', () => {
       textarea.value = '';
       localStorage.removeItem(STORAGE_KEY);
       const base = location.origin + location.pathname + '?id=' + encodeURIComponent(id);
       history.replaceState(null, '', base);
-      msg.textContent = "Texte réinitialisé";
+      msg.textContent = "🗑 Réinitialisé";
       setTimeout(() => (msg.textContent = ''), 2000);
     });
   </script>
