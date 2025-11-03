@@ -6,104 +6,72 @@
   <title>Lecture à voix haute</title>
   <style>
     html, body {
-      height: 100%; margin: 0; background: transparent;
+      height: 100%;
+      margin: 0;
+      background: transparent;
       font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: .6rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
     }
-    .row { display: flex; align-items: center; gap: .8rem; }
-    .tools { display: flex; gap: .5rem; font-size: .9rem; }
+
+    .container {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
     button {
-      font-size: 1rem; padding: .5rem 1rem; border: none; border-radius: 999px;
-      background: #000; color: #fff; cursor: pointer; transition: opacity .2s;
+      font-size: 0.9rem;
+      padding: 0.35rem 0.8rem;
+      border: none;
+      border-radius: 999px;
+      background: #000;
+      color: #fff;
+      cursor: pointer;
+      transition: opacity 0.2s;
     }
-    button:hover { opacity: .85; }
-    .secondary {
-      background: #e5e5e5; color: #111; border-radius: 10px; padding: .4rem .6rem; border: 1px solid #d0d0d0;
+    button:hover {
+      opacity: 0.8;
     }
+
+    .tools {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.3rem;
+      width: 220px; /* même largeur que la zone */
+    }
+
+    .tools button {
+      background: #e5e5e5;
+      color: #111;
+      border-radius: 8px;
+      padding: 0.25rem 0.6rem;
+      font-size: 0.8rem;
+      border: 1px solid #ccc;
+    }
+
     textarea {
-      width: 220px; height: 90px; font-size: .95rem; padding: .6rem;
-      border-radius: 8px; border: 1px solid #ccc; resize: none; background: rgba(255,255,255,.5);
+      width: 220px;
+      height: 70px;
+      font-size: 0.9rem;
+      padding: 0.5rem;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      resize: none;
+      background: rgba(255,255,255,0.5);
     }
-    .msg { font-size: .85rem; color: #333; min-height: 1em; }
+
+    .msg {
+      font-size: 0.8rem;
+      color: #333;
+      min-height: 1em;
+    }
   </style>
 </head>
 <body>
-  <div class="row">
+  <div class="container">
     <button id="play">▶</button>
-    <textarea id="texte">Bonjour à tous. Écoutons la consigne ensemble.</textarea>
-  </div>
-
-  <div class="tools">
-    <button id="copy" class="secondary" title="Copier un lien partageable avec ce texte">🔗 Copier le lien</button>
-    <button id="clear" class="secondary" title="Effacer ce texte (pour ce widget)">🗑 Réinitialiser</button>
-  </div>
-  <div id="msg" class="msg"></div>
-
-  <script>
-    const btnPlay = document.getElementById('play');
-    const btnCopy = document.getElementById('copy');
-    const btnClear = document.getElementById('clear');
-    const textarea = document.getElementById('texte');
-    const msg = document.getElementById('msg');
-
-    // --- ID unique par embed ---
-    const params = new URLSearchParams(location.search);
-    const id = (params.get('id') || 'default').slice(0,50);
-    const STORAGE_KEY = 'ttsTexteSauvegarde:' + id;
-
-    // --- Charger texte : priorité à l'URL, sinon storage, sinon valeur par défaut ---
-    const urlText = params.get('text');
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (urlText) {
-      textarea.value = decodeURIComponent(urlText);
-      localStorage.setItem(STORAGE_KEY, textarea.value);
-    } else if (saved !== null) {
-      textarea.value = saved;
-    }
-
-    // --- Sauvegarde locale (pour le même PC / même widget) ---
-    textarea.addEventListener('input', () => {
-      localStorage.setItem(STORAGE_KEY, textarea.value);
-    });
-
-    // --- Lecture ---
-    function speak(text) {
-      if (!('speechSynthesis' in window)) {
-        alert("La synthèse vocale n'est pas disponible dans ce navigateur.");
-        return;
-      }
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = "fr-FR"; u.rate = 1; u.pitch = 1;
-      speechSynthesis.cancel(); speechSynthesis.speak(u);
-    }
-    btnPlay.addEventListener('click', () => {
-      const text = textarea.value.trim();
-      if (text) speak(text);
-    });
-
-    // --- Copier un lien partageable avec le texte encodé ---
-    btnCopy.addEventListener('click', async () => {
-      const base = location.origin + location.pathname;
-      const text = encodeURIComponent(textarea.value || '');
-      const newUrl = `${base}?id=${encodeURIComponent(id)}&text=${text}`;
-      try {
-        await navigator.clipboard.writeText(newUrl);
-        msg.textContent = "Lien copié dans le presse-papiers ✅";
-      } catch {
-        // fallback : afficher pour copier manuellement
-        msg.textContent = "Copiez ce lien : " + newUrl;
-      }
-      setTimeout(() => (msg.textContent = ''), 3000);
-    });
-
-    // --- Réinitialiser pour CE widget ---
-    btnClear.addEventListener('click', () => {
-      textarea.value = '';
-      localStorage.removeItem(STORAGE_KEY);
-      msg.textContent = "Texte réinitialisé pour cet embed.";
-      setTimeout(() => (msg.textContent = ''), 2000);
-    });
-  </script>
-</body>
-</html>
+    <textarea i
